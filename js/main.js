@@ -134,6 +134,7 @@
             demoContainer.classList.remove('hidden');
             backButton.classList.remove('hidden');
             webcamPreview.classList.remove('hidden');
+            document.body.classList.add('in-demo');
             opennessIndicator.classList.remove('hidden');
             instructions.classList.remove('hidden');
 
@@ -176,6 +177,7 @@
         demoContainer.classList.add('hidden');
         backButton.classList.add('hidden');
         webcamPreview.classList.add('hidden');
+        document.body.classList.remove('in-demo');
         opennessIndicator.classList.add('hidden');
         instructions.classList.add('hidden');
         loadingOverlay.classList.add('hidden');

@@ -16,11 +16,14 @@
 
 html, body {
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     background: var(--cosmic-deep);
     color: var(--star-white);
+}
+
+body.in-demo {
+    overflow: hidden;
 }
 
 /* ============================================
@@ -35,12 +38,15 @@ html, body {
     height: 100%;
     z-index: 500;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 40px 0;
 }
 
 .menu-background {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -566,12 +572,17 @@ html, body {
 }
 
 @media (max-width: 480px) {
+    #menu-screen {
+        padding: 20px 0;
+    }
+
     .menu-content {
-        padding: 20px;
+        padding: 15px;
     }
 
     .menu-title {
         font-size: 1.5rem;
+        letter-spacing: 2px;
     }
 
     #webcam-preview {
