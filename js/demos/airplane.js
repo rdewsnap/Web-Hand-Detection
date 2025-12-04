@@ -17,9 +17,9 @@ const AirplaneDemo = (function() {
         airplane: {
             speed: 0.5,
             rollSensitivity: 2.5,
-            pitchSensitivity: 1.5,
+            pitchSensitivity: 3.0,
             maxRoll: Math.PI / 3,
-            maxPitch: Math.PI / 4
+            maxPitch: Math.PI / 3
         },
         terrain: {
             segments: 100,
@@ -540,17 +540,35 @@ const AirplaneDemo = (function() {
 
     function updateFlightControls(handRotation, isHandDetected) {
         if (isHandDetected && handRotation) {
-            // Extract euler angles from hand rotation
+            // Extract euler angles from hand rotation for roll
             const euler = new THREE.Euler().setFromQuaternion(handRotation, 'YXZ');
             
-            // Map hand rotation to plane controls
             // Roll (Z rotation of hand) -> Roll of plane
-            targetRoll = -euler.z * CONFIG.airplane.rollSensitivity;
+            targetRoll = euler.z * CONFIG.airplane.rollSensitivity;
             targetRoll = THREE.MathUtils.clamp(targetRoll, -CONFIG.airplane.maxRoll, CONFIG.airplane.maxRoll);
             
-            // Pitch (X rotation of hand) -> Pitch of plane
-            targetPitch = euler.x * CONFIG.airplane.pitchSensitivity;
-            targetPitch = THREE.MathUtils.clamp(targetPitch, -CONFIG.airplane.maxPitch, CONFIG.airplane.maxPitch);
+            // Pitch based on wrist-to-fingertip depth difference
+            // If wrist is closer than fingers (wrist.z more negative), pitch up
+            const landmarks = HandTracking.getLandmarks();
+            if (landmarks) {
+                const wristZ = landmarks[0].z || 0;
+                // Average fingertip Z positions
+                const fingertipIndices = [4, 8, 12, 16, 20];
+                let avgFingertipZ = 0;
+                for (const idx of fingertipIndices) {
+                    avgFingertipZ += (landmarks[idx].z || 0);
+                }
+                avgFingertipZ /= fingertipIndices.length;
+                
+                // Depth difference: negative means wrist closer (pitch up)
+                // MediaPipe Z: more negative = closer to camera
+                const depthDiff = avgFingertipZ - wristZ;
+                
+                // Scale the depth difference to pitch angle
+                // Typical range is about -0.1 to 0.1
+                targetPitch = depthDiff * CONFIG.airplane.pitchSensitivity * 3;
+                targetPitch = THREE.MathUtils.clamp(targetPitch, -CONFIG.airplane.maxPitch, CONFIG.airplane.maxPitch);
+            }
         } else {
             // Gradually return to level flight
             targetRoll *= 0.95;

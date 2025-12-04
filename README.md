@@ -1,30 +1,26 @@
-# Cosmic Prism - Hand-Controlled Explosion
+# Hand Detection Demos
 
-An interactive WebGL visualization where a gem-like truncated octahedron shatters into cosmic particles based on your hand gestures. Control the explosion with your fist and rotate the debris by tilting your hand.
+Interactive WebGL demos controlled by hand gestures using MediaPipe hand tracking.
 
-![Demo](https://img.shields.io/badge/demo-live-brightgreen)
+## Demos
+
+### Cosmic Prism
+A gem-like truncated octahedron that shatters into cosmic particles based on hand openness.
+- **Control**: Open/close your fist to control the explosion
+- **Rotation**: Tilt your hand to rotate the exploded debris field
+
+### Flight Control
+Pilot a low-poly airplane through a neon terrain using hand orientation.
+- **Control**: Hold palm facing camera for level flight
+- **Steering**: Tilt hand left/right to roll, up/down to pitch
 
 ## Features
 
-- **Hand Tracking** - Real-time hand detection via MediaPipe Hands
-- **Gesture Control** - Open/close your hand to control the explosion intensity
-- **3D Rotation** - Tilt your hand to rotate exploded pieces around the center
+- **Real-time Hand Tracking** - MediaPipe Hands for accurate gesture detection
 - **Distance Independent** - Works consistently regardless of hand distance from camera
-- **Truncated Octahedron** - Beautiful gem-like polyhedron with 14 faces (8 hexagons + 6 squares)
-- **Collision Avoidance** - Fragments repel each other during explosion
-- **Cosmic Aesthetic** - Deep space background, nebula effects, twinkling stars
-- **Particle System** - 1200 glowing particles accompany the fragment explosion
-- **Mobile Support** - Responsive design with reduced particle count for performance
-
-## How to Use
-
-1. Open the app in a browser (Chrome/Edge recommended)
-2. Allow camera access when prompted
-3. Show your hand to the camera
-4. **Close fist** → Polyhedron assembles
-5. **Open hand** → Polyhedron explodes into fragments
-6. **Tilt/rotate hand** → Exploded pieces orbit around the center
-7. **Pause anywhere** → Partially open hand freezes the explosion mid-burst
+- **Shared Hand Module** - Reusable hand tracking for all demos
+- **Mobile Support** - Responsive design with performance optimizations
+- **Cosmic Aesthetic** - Neon colors, particle effects, and ambient animations
 
 ## Running Locally
 
@@ -43,38 +39,63 @@ php -S localhost:8080
 
 Then open `http://localhost:8080` in your browser.
 
-## Tech Stack
-
-- **Three.js** (r134) - 3D rendering, custom shaders, particle systems
-- **MediaPipe Hands** - ML-powered hand landmark detection
-- **Vanilla JS** - No framework dependencies
-- **CSS3** - Animations, gradients, responsive design
-
-## File Structure
+## Project Structure
 
 ```
-├── index.html    # Main HTML with CDN imports
-├── styles.css    # Cosmic-themed styling
-├── app.js        # All application logic
+├── index.html              # Main HTML with menu
+├── styles.css              # All styling
+├── js/
+│   ├── main.js             # Menu and demo switching
+│   ├── handTracking.js     # Shared hand detection module
+│   └── demos/
+│       ├── cosmicPrism.js  # Exploding prism demo
+│       └── airplane.js     # Flight control demo
 └── README.md
 ```
+
+## Tech Stack
+
+- **Three.js** (r134) - 3D rendering, shaders, particle systems
+- **MediaPipe Hands** - ML-powered hand landmark detection
+- **Vanilla JS** - No framework dependencies
+
+## Hand Tracking API
+
+The shared `HandTracking` module exposes:
+
+```javascript
+HandTracking.init(videoElement, previewCanvas)  // Initialize tracking
+HandTracking.update()                            // Call in animation loop
+HandTracking.getOpenness()                       // 0-1 (fist to open)
+HandTracking.getRotation()                       // THREE.Quaternion
+HandTracking.isDetected()                        // Boolean
+HandTracking.isMobile()                          // Boolean
+```
+
+## Adding New Demos
+
+1. Create `js/demos/yourDemo.js`
+2. Implement `init(container)` and `destroy()` methods
+3. Register in `js/main.js` demos object
+4. Add a card in `index.html`
+
+## Controls Reference
+
+| Demo | Gesture | Action |
+|------|---------|--------|
+| Cosmic Prism | Closed fist | Assembled shape |
+| Cosmic Prism | Open hand | Full explosion |
+| Cosmic Prism | Hand tilt | Rotate debris |
+| Flight Control | Palm forward | Level flight |
+| Flight Control | Tilt left/right | Bank turn |
+| Flight Control | Tilt up/down | Climb/dive |
 
 ## Browser Support
 
 - Chrome 80+ ✓
 - Edge 80+ ✓
 - Firefox 75+ ✓
-- Safari 14+ ✓ (may require camera permission in settings)
-
-## Controls Reference
-
-| Gesture | Action |
-|---------|--------|
-| Closed fist | Assembled polyhedron |
-| Open hand | Full explosion |
-| Partial open | Frozen mid-explosion |
-| Hand tilt | Rotate debris field |
-| No hand | Ambient rotation |
+- Safari 14+ ✓
 
 ## License
 
