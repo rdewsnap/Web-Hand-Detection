@@ -68,7 +68,7 @@ async function initHandTracking(videoElement, previewCanvasElement) {
         _webcamVideo.srcObject = stream;
         await _webcamVideo.play();
         
-        // Setup preview canvas
+        // Setup preview canvas (4:3 to match MediaPipe processing)
         _previewCanvas.width = 160;
         _previewCanvas.height = 120;
         
