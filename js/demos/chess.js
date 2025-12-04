@@ -879,16 +879,16 @@ const ChessDemo = (function() {
             
             handModel.position.set(x, Math.max(0.5, y), z);
             
-            // Calculate hand rotation
+            // Calculate hand rotation (flip for mirrored webcam)
             const dx = middleFinger.x - wrist.x;
             const dy = middleFinger.y - wrist.y;
             const angle = Math.atan2(dx, dy);
-            handModel.rotation.y = angle; // Flip rotation too
+            handModel.rotation.y = -angle; // Negative for mirrored view
             
             // Mirror hand based on which hand is detected
-            // MediaPipe reports from camera's view, so 'Right' from camera = user's left hand
+            // MediaPipe 'Right' in mirrored view = user's right hand
             const handedness = HandTracking.getHandedness();
-            const isRightHand = handedness === 'Left'; // Flipped due to mirror
+            const isRightHand = handedness === 'Right';
             
             // Scale based on openness (grabbing animation)
             const openness = HandTracking.getOpenness();
