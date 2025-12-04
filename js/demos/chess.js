@@ -908,7 +908,7 @@ const ChessDemo = (function() {
 
     function handleInteraction() {
         const openness = HandTracking.getOpenness();
-        const isGrabbing = openness < 0.3;
+        const isGrabbing = openness < 0.45; // Pinch or fist (~25% open with headroom)
         const landmarks = HandTracking.getLandmarks();
         
         if (!landmarks || !handModel.visible) {
