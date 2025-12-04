@@ -12,6 +12,7 @@ let _handOpenness = 0;
 let _targetHandOpenness = 0;
 let _smoothedOpenness = 0;
 let _isHandDetected = false;
+let _handedness = 'Right'; // 'Left' or 'Right' (from camera's perspective)
 let _handRotation = null;
 let _targetHandRotation = null;
 let _smoothedHandRotation = null;
@@ -124,6 +125,11 @@ function onHandResults(results) {
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         _isHandDetected = true;
         _landmarks = results.multiHandLandmarks[0];
+        
+        // Get handedness (Left/Right from camera's perspective)
+        if (results.multiHandedness && results.multiHandedness.length > 0) {
+            _handedness = results.multiHandedness[0].label; // 'Left' or 'Right'
+        }
         
         // Draw hand landmarks on preview
         drawHandLandmarks(_landmarks);
@@ -324,6 +330,7 @@ function getTargetOpenness() { return _targetHandOpenness; }
 function getHandRotation() { return _handRotation; }
 function isHandDetected() { return _isHandDetected; }
 function getLandmarks() { return _landmarks; }
+function getHandedness() { return _handedness; }
 function getIsMobile() { return isMobile; }
 function getShowCameraFeed() { return _showCameraFeed; }
 function toggleCameraFeed() { 
@@ -340,6 +347,7 @@ window.HandTracking = {
     getRotation: getHandRotation,
     isDetected: isHandDetected,
     getLandmarks: getLandmarks,
+    getHandedness: getHandedness,
     isMobile: getIsMobile,
     setOnHandUpdate: setOnHandUpdate,
     setOnHandLost: setOnHandLost,
