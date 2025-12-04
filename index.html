@@ -9,6 +9,9 @@
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     
+    <!-- Chess.js for game logic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.0/chess.min.js"></script>
+    
     <!-- MediaPipe Hands -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -60,6 +63,26 @@
                     <p class="demo-card-desc">Pilot an airplane with hand gestures</p>
                     <div class="demo-card-controls">
                         <span>Tilt palm to steer</span>
+                    </div>
+                </div>
+
+                <!-- Chess Demo Card -->
+                <div class="demo-card" data-demo="chess">
+                    <div class="demo-card-icon">
+                        <svg viewBox="0 0 100 100" class="chess-icon">
+                            <!-- Chess king piece -->
+                            <path d="M50 15 L50 25 M45 20 L55 20" stroke="currentColor" stroke-width="3" fill="none"/>
+                            <path d="M35 85 L65 85 L60 70 L40 70 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <ellipse cx="50" cy="65" rx="15" ry="8" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M38 55 Q50 35 62 55" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <ellipse cx="50" cy="55" rx="12" ry="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M42 45 Q50 28 58 45" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <h3 class="demo-card-title">Hand Chess</h3>
+                    <p class="demo-card-desc">Play chess against an elf with your hand</p>
+                    <div class="demo-card-controls">
+                        <span>Grab pieces to move</span>
                     </div>
                 </div>
             </div>
@@ -116,6 +139,7 @@
     <script src="js/handTracking.js"></script>
     <script src="js/demos/cosmicPrism.js"></script>
     <script src="js/demos/airplane.js"></script>
+    <script src="js/demos/chess.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

@@ -7,7 +7,8 @@
     // Available demos
     const demos = {
         'cosmic-prism': CosmicPrismDemo,
-        'airplane': AirplaneDemo
+        'airplane': AirplaneDemo,
+        'chess': ChessDemo
     };
 
     // Current state
@@ -192,6 +193,10 @@
             case 'airplane':
                 instructionsText.textContent = 'Hold palm facing camera';
                 instructionsSub.textContent = 'Tilt hand to steer the airplane';
+                break;
+            case 'chess':
+                instructionsText.textContent = 'Use your hand to play';
+                instructionsSub.textContent = 'Close fist to grab, open to drop pieces';
                 break;
             default:
                 instructionsText.textContent = 'Show your hand to the camera';
