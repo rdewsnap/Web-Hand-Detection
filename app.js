@@ -890,34 +890,51 @@ function calculateHandOpenness(landmarks) {
     // MediaPipe hand landmarks:
     // 0: Wrist
     // 4: Thumb tip, 8: Index tip, 12: Middle tip, 16: Ring tip, 20: Pinky tip
-    // 9: Middle finger MCP (base) - good approximation of palm center
+    // 5: Index MCP, 9: Middle MCP, 13: Ring MCP, 17: Pinky MCP
     
-    const palmCenter = landmarks[9];
-    const fingertips = [
-        landmarks[4],  // Thumb
-        landmarks[8],  // Index
-        landmarks[12], // Middle
-        landmarks[16], // Ring
-        landmarks[20]  // Pinky
+    const wrist = landmarks[0];
+    const middleMCP = landmarks[9];
+    
+    // Calculate hand size reference (wrist to middle MCP)
+    // This scales with distance from camera, so we use it to normalize
+    const refDx = middleMCP.x - wrist.x;
+    const refDy = middleMCP.y - wrist.y;
+    const refDz = (middleMCP.z || 0) - (wrist.z || 0);
+    const handSize = Math.sqrt(refDx * refDx + refDy * refDy + refDz * refDz);
+    
+    // Avoid division by zero
+    if (handSize < 0.001) return 0;
+    
+    // Fingertips and their corresponding MCP (base) joints
+    const fingers = [
+        { tip: landmarks[4], base: landmarks[2] },   // Thumb (tip to IP joint)
+        { tip: landmarks[8], base: landmarks[5] },   // Index
+        { tip: landmarks[12], base: landmarks[9] },  // Middle
+        { tip: landmarks[16], base: landmarks[13] }, // Ring
+        { tip: landmarks[20], base: landmarks[17] }  // Pinky
     ];
     
-    // Calculate average distance from fingertips to palm center
-    let totalDistance = 0;
-    for (const tip of fingertips) {
-        const dx = tip.x - palmCenter.x;
-        const dy = tip.y - palmCenter.y;
-        const dz = (tip.z || 0) - (palmCenter.z || 0);
-        totalDistance += Math.sqrt(dx * dx + dy * dy + dz * dz);
+    // Calculate average extension ratio (tip-to-base distance / hand size)
+    let totalRatio = 0;
+    for (const finger of fingers) {
+        const dx = finger.tip.x - finger.base.x;
+        const dy = finger.tip.y - finger.base.y;
+        const dz = (finger.tip.z || 0) - (finger.base.z || 0);
+        const fingerLength = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        
+        // Normalize by hand size to make it distance-independent
+        totalRatio += fingerLength / handSize;
     }
     
-    const avgDistance = totalDistance / fingertips.length;
+    const avgRatio = totalRatio / fingers.length;
     
-    // Normalize: closed fist ~0.1, open hand ~0.35
-    // Adjust these values based on testing
-    const minDist = 0.08;
-    const maxDist = 0.30;
+    // Normalized ratios: closed fist ~0.3-0.5, open hand ~0.9-1.1
+    // Higher minRatio = more forgiving for keeping fist "closed"
+    // Lower maxRatio = easier to reach full "open"
+    const minRatio = 0.55;  // Increased from 0.35 - larger dead zone for closed fist
+    const maxRatio = 0.95;
     
-    const normalized = (avgDistance - minDist) / (maxDist - minDist);
+    const normalized = (avgRatio - minRatio) / (maxRatio - minRatio);
     return Math.max(0, Math.min(1, normalized));
 }
 
