@@ -64,6 +64,7 @@ Then open `http://localhost:8080` in your browser.
 
 - **Three.js** (r134) - 3D rendering, shaders, particle systems
 - **MediaPipe Hands** - ML-powered hand landmark detection
+- **Chess.js** - Chess move validation and AI
 - **Vanilla JS** - No framework dependencies
 
 ## Hand Tracking API
