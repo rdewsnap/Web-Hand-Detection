@@ -872,8 +872,8 @@ const ChessDemo = (function() {
             const wrist = landmarks[0];
             const middleFinger = landmarks[9];
             
-            // Convert normalized coords to world space
-            const x = (wrist.x - 0.5) * 10;
+            // Flip X because webcam is mirrored
+            const x = -(wrist.x - 0.5) * 10;
             const z = (wrist.y - 0.3) * 8;
             const y = CONFIG.hand.heightOffset + (wrist.z || 0) * -5;
             
@@ -883,13 +883,21 @@ const ChessDemo = (function() {
             const dx = middleFinger.x - wrist.x;
             const dy = middleFinger.y - wrist.y;
             const angle = Math.atan2(dx, dy);
-            handModel.rotation.y = -angle;
+            handModel.rotation.y = angle; // Flip rotation too
+            
+            // Mirror hand based on which hand is detected
+            // MediaPipe reports from camera's view, so 'Right' from camera = user's left hand
+            const handedness = HandTracking.getHandedness();
+            const isRightHand = handedness === 'Left'; // Flipped due to mirror
             
             // Scale based on openness (grabbing animation)
             const openness = HandTracking.getOpenness();
             const grabScale = 1 - openness * 0.3;
+            
+            // Mirror X scale for left hand (thumb on correct side)
+            const xScale = isRightHand ? 1 : -1;
             handModel.scale.set(
-                CONFIG.hand.scale * 8 * grabScale,
+                CONFIG.hand.scale * 8 * grabScale * xScale,
                 CONFIG.hand.scale * 8,
                 CONFIG.hand.scale * 8 * grabScale
             );
@@ -904,9 +912,7 @@ const ChessDemo = (function() {
         const landmarks = HandTracking.getLandmarks();
         
         if (!landmarks || !handModel.visible) {
-            if (grabbedPiece && !isGrabbing) {
-                dropPiece();
-            }
+            // Don't drop on hand lost - wait for explicit release
             return;
         }
         
@@ -979,24 +985,32 @@ const ChessDemo = (function() {
     function dropPiece(targetSquare) {
         if (!grabbedPiece || !selectedSquare) return;
         
-        // Try to make the move
-        const move = chess.move({
-            from: selectedSquare,
-            to: targetSquare,
-            promotion: 'q' // Auto-promote to queen
-        });
+        let moveSuccessful = false;
         
-        if (move) {
-            // Valid move
-            updatePiecePositions();
-            updateStatus();
+        // Only try to make move if we have a valid target square
+        if (targetSquare) {
+            // Try to make the move
+            const move = chess.move({
+                from: selectedSquare,
+                to: targetSquare,
+                promotion: 'q' // Auto-promote to queen
+            });
             
-            // AI's turn
-            if (!chess.isGameOver() && chess.turn() === 'b') {
-                setTimeout(makeAIMove, 300);
+            if (move) {
+                moveSuccessful = true;
+                // Valid move
+                updatePiecePositions();
+                updateStatus();
+                
+                // AI's turn
+                if (!chess.isGameOver() && chess.turn() === 'b') {
+                    setTimeout(makeAIMove, 300);
+                }
             }
-        } else {
-            // Invalid move - return piece
+        }
+        
+        if (!moveSuccessful) {
+            // Invalid move or no target - return piece
             grabbedPiece.position.copy(originalPiecePosition);
         }
         
