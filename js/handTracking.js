@@ -20,6 +20,9 @@ let _landmarks = null;
 // Configuration
 const SMOOTHING = 0.12;
 
+// Preview settings
+let _showCameraFeed = false; // Default to showing only hand rig
+
 // Callbacks for demos
 let _onHandUpdate = null;
 let _onHandLost = null;
@@ -108,7 +111,15 @@ function onHandResults(results) {
     // Draw preview
     _previewCtx.save();
     _previewCtx.clearRect(0, 0, _previewCanvas.width, _previewCanvas.height);
-    _previewCtx.drawImage(results.image, 0, 0, _previewCanvas.width, _previewCanvas.height);
+    
+    // Only draw camera feed if enabled
+    if (_showCameraFeed) {
+        _previewCtx.drawImage(results.image, 0, 0, _previewCanvas.width, _previewCanvas.height);
+    } else {
+        // Dark background for hand rig only mode
+        _previewCtx.fillStyle = 'rgba(13, 5, 24, 0.95)';
+        _previewCtx.fillRect(0, 0, _previewCanvas.width, _previewCanvas.height);
+    }
     
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         _isHandDetected = true;
@@ -314,6 +325,11 @@ function getHandRotation() { return _handRotation; }
 function isHandDetected() { return _isHandDetected; }
 function getLandmarks() { return _landmarks; }
 function getIsMobile() { return isMobile; }
+function getShowCameraFeed() { return _showCameraFeed; }
+function toggleCameraFeed() { 
+    _showCameraFeed = !_showCameraFeed; 
+    return _showCameraFeed;
+}
 
 // Export as global HandTracking object
 window.HandTracking = {
@@ -326,6 +342,8 @@ window.HandTracking = {
     getLandmarks: getLandmarks,
     isMobile: getIsMobile,
     setOnHandUpdate: setOnHandUpdate,
-    setOnHandLost: setOnHandLost
+    setOnHandLost: setOnHandLost,
+    toggleCameraFeed: toggleCameraFeed,
+    getShowCameraFeed: getShowCameraFeed
 };
 

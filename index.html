@@ -88,6 +88,14 @@
     <div id="webcam-preview" class="hidden">
         <canvas id="preview-canvas"></canvas>
         <div class="preview-label">Hand Tracking</div>
+        <button id="camera-toggle" title="Toggle camera feed">
+            <svg id="camera-icon-off" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M18 10.48V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.48l4 3.98v-11l-4 3.98zM16 18H4V6h12v12zm-3-3.02v-1.96l2.95-2.95-2.95-2.95v-1.96L18.17 10l-5.17 4.98z"/>
+            </svg>
+            <svg id="camera-icon-on" class="hidden" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M18 10.48V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.48l4 3.98v-11l-4 3.98zM16 18H4V6h12v12z"/>
+            </svg>
+        </button>
     </div>
 
     <!-- Hand openness indicator -->

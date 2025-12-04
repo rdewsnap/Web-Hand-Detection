@@ -27,6 +27,9 @@
     const instructionsText = document.getElementById('instructions-text');
     const instructionsSub = document.getElementById('instructions-sub');
     const indicatorFill = document.querySelector('.indicator-fill');
+    const cameraToggle = document.getElementById('camera-toggle');
+    const cameraIconOn = document.getElementById('camera-icon-on');
+    const cameraIconOff = document.getElementById('camera-icon-off');
 
     // Demo cards
     const demoCards = document.querySelectorAll('.demo-card');
@@ -52,6 +55,27 @@
                 returnToMenu();
             }
         });
+
+        // Setup camera toggle
+        cameraToggle.addEventListener('click', () => {
+            const showCamera = HandTracking.toggleCameraFeed();
+            updateCameraToggleIcon(showCamera);
+        });
+    }
+
+    /**
+     * Update camera toggle button icon
+     */
+    function updateCameraToggleIcon(showCamera) {
+        if (showCamera) {
+            cameraIconOn.classList.remove('hidden');
+            cameraIconOff.classList.add('hidden');
+            cameraToggle.classList.add('active');
+        } else {
+            cameraIconOn.classList.add('hidden');
+            cameraIconOff.classList.remove('hidden');
+            cameraToggle.classList.remove('active');
+        }
     }
 
     /**
