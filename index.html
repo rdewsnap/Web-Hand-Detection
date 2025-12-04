@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Cosmic Prism - Hand Controlled</title>
+    <title>Hand Detection Demos</title>
     <link rel="stylesheet" href="styles.css">
     
     <!-- Three.js -->
@@ -16,36 +16,82 @@
 </head>
 <body>
     <!-- Loading overlay -->
-    <div id="loading-overlay">
+    <div id="loading-overlay" class="hidden">
         <div class="loader">
             <div class="loader-ring"></div>
-            <p>Initializing hand detection...</p>
+            <p>Initializing...</p>
         </div>
     </div>
 
-    <!-- Permission denied message -->
-    <div id="permission-denied" class="hidden">
-        <div class="message-box">
-            <h2>Camera Access Required</h2>
-            <p>Please allow camera access to experience the cosmic prism.</p>
-            <button onclick="location.reload()">Try Again</button>
+    <!-- Menu Screen -->
+    <div id="menu-screen">
+        <div class="menu-background"></div>
+        <div class="menu-content">
+            <h1 class="menu-title">Hand Detection</h1>
+            <p class="menu-subtitle">Interactive WebGL Demos</p>
+            
+            <div class="demo-grid">
+                <!-- Cosmic Prism Demo Card -->
+                <div class="demo-card" data-demo="cosmic-prism">
+                    <div class="demo-card-icon">
+                        <svg viewBox="0 0 100 100" class="prism-icon">
+                            <polygon points="50,10 90,35 90,65 50,90 10,65 10,35" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <line x1="50" y1="10" x2="50" y2="90" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                            <line x1="10" y1="35" x2="90" y2="65" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                            <line x1="90" y1="35" x2="10" y2="65" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        </svg>
+                    </div>
+                    <h3 class="demo-card-title">Cosmic Prism</h3>
+                    <p class="demo-card-desc">Explode a gem-like shape with your hand</p>
+                    <div class="demo-card-controls">
+                        <span>Open/Close fist</span>
+                    </div>
+                </div>
+
+                <!-- Airplane Demo Card -->
+                <div class="demo-card" data-demo="airplane">
+                    <div class="demo-card-icon">
+                        <svg viewBox="0 0 100 100" class="airplane-icon">
+                            <path d="M50 20 L55 45 L85 55 L55 55 L50 80 L45 55 L15 55 L45 45 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="50" cy="50" r="5" fill="currentColor" opacity="0.5"/>
+                        </svg>
+                    </div>
+                    <h3 class="demo-card-title">Flight Control</h3>
+                    <p class="demo-card-desc">Pilot an airplane with hand gestures</p>
+                    <div class="demo-card-controls">
+                        <span>Tilt palm to steer</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="menu-hint">Click a card to begin</p>
         </div>
     </div>
 
-    <!-- Three.js canvas container -->
-    <div id="canvas-container"></div>
+    <!-- Demo Container -->
+    <div id="demo-container" class="hidden">
+        <div id="canvas-container"></div>
+    </div>
+
+    <!-- Back Button -->
+    <button id="back-button" class="hidden">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        Menu
+    </button>
 
     <!-- Hidden video for webcam -->
     <video id="webcam" autoplay playsinline></video>
 
     <!-- Webcam preview -->
-    <div id="webcam-preview">
+    <div id="webcam-preview" class="hidden">
         <canvas id="preview-canvas"></canvas>
         <div class="preview-label">Hand Tracking</div>
     </div>
 
     <!-- Hand openness indicator -->
-    <div id="openness-indicator">
+    <div id="openness-indicator" class="hidden">
         <div class="indicator-bar">
             <div class="indicator-fill"></div>
         </div>
@@ -53,12 +99,15 @@
     </div>
 
     <!-- Instructions -->
-    <div id="instructions">
-        <p>Show your hand to the camera</p>
-        <p class="sub">Open/close your hand to control the explosion</p>
+    <div id="instructions" class="hidden">
+        <p id="instructions-text">Show your hand to the camera</p>
+        <p id="instructions-sub" class="sub">Open/close your hand to control the explosion</p>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Scripts -->
+    <script src="js/handTracking.js"></script>
+    <script src="js/demos/cosmicPrism.js"></script>
+    <script src="js/demos/airplane.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
-
