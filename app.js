@@ -9,11 +9,11 @@
 // ============================================
 const CONFIG = {
     particles: {
-        count: 800,
-        baseSize: 0.08,
-        sizeVariation: 0.04,
-        explosionRadius: 8,
-        colorVariation: 0.2
+        count: 1200,
+        baseSize: 0.1,
+        sizeVariation: 0.06,
+        explosionRadius: 12,
+        colorVariation: 0.25
     },
     prism: {
         radius: 1.5,
@@ -24,29 +24,30 @@ const CONFIG = {
         fov: 60,
         near: 0.1,
         far: 1000,
-        position: { x: 0, y: 0, z: 8 }
+        position: { x: 0, y: 0, z: 10 }
     },
     bloom: {
-        strength: 1.5,
-        radius: 0.4,
-        threshold: 0.2
+        strength: 2.0,
+        radius: 0.5,
+        threshold: 0.15
     },
-    smoothing: 0.15, // Lower = smoother but more lag
+    smoothing: 0.12, // Lower = smoother but more lag
     ambientRotationSpeed: 0.001
 };
 
 // Detect mobile for performance adjustments
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 if (isMobile) {
-    CONFIG.particles.count = 400;
-    CONFIG.bloom.strength = 1.0;
+    CONFIG.particles.count = 600;
+    CONFIG.bloom.strength = 1.5;
 }
 
 // ============================================
 // GLOBAL STATE
 // ============================================
 let scene, camera, renderer, composer;
-let prismMesh, particleSystem;
+let prismGroup, prismFragments = [];
+let particleSystem;
 let starField;
 let handOpenness = 0;
 let targetHandOpenness = 0;
@@ -59,6 +60,9 @@ let particlePositions = [];
 let particleOriginalPositions = [];
 let particleExplodedPositions = [];
 let particleVelocities = [];
+
+// Fragment data for explosion
+let fragmentData = [];
 
 // DOM elements
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -146,18 +150,8 @@ async function initThreeJS() {
 }
 
 function setupPostProcessing() {
-    composer = new THREE.EffectComposer(renderer);
-    
-    const renderPass = new THREE.RenderPass(scene, camera);
-    composer.addPass(renderPass);
-    
-    const bloomPass = new THREE.UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        CONFIG.bloom.strength,
-        CONFIG.bloom.radius,
-        CONFIG.bloom.threshold
-    );
-    composer.addPass(bloomPass);
+    // Skip post-processing for now - use standard rendering
+    composer = null;
 }
 
 function createCosmicBackground() {
@@ -362,37 +356,252 @@ function createStarField() {
 function createPentagonalPrism() {
     const { radius, height, segments } = CONFIG.prism;
     
-    // Create pentagonal prism geometry
-    const geometry = new THREE.CylinderGeometry(radius, radius, height, segments, 1, false);
+    // Create a group to hold all fragments
+    prismGroup = new THREE.Group();
+    prismGroup.rotation.x = Math.PI * 0.1;
+    scene.add(prismGroup);
     
-    // Ethereal glowing material
+    // Generate pentagon vertices
+    const topVertices = [];
+    const bottomVertices = [];
+    
+    for (let i = 0; i < segments; i++) {
+        const angle = (i / segments) * Math.PI * 2 - Math.PI / 2;
+        topVertices.push(new THREE.Vector3(
+            Math.cos(angle) * radius,
+            height / 2,
+            Math.sin(angle) * radius
+        ));
+        bottomVertices.push(new THREE.Vector3(
+            Math.cos(angle) * radius,
+            -height / 2,
+            Math.sin(angle) * radius
+        ));
+    }
+    
+    const centerTop = new THREE.Vector3(0, height / 2, 0);
+    const centerBottom = new THREE.Vector3(0, -height / 2, 0);
+    
+    // Create fragments for top pentagon (5 triangles)
+    for (let i = 0; i < segments; i++) {
+        const next = (i + 1) % segments;
+        createFragment([
+            centerTop.clone(),
+            topVertices[i].clone(),
+            topVertices[next].clone()
+        ], 'top');
+    }
+    
+    // Create fragments for bottom pentagon (5 triangles)
+    for (let i = 0; i < segments; i++) {
+        const next = (i + 1) % segments;
+        createFragment([
+            centerBottom.clone(),
+            bottomVertices[next].clone(),
+            bottomVertices[i].clone()
+        ], 'bottom');
+    }
+    
+    // Create fragments for side faces (5 rectangles = 10 triangles)
+    for (let i = 0; i < segments; i++) {
+        const next = (i + 1) % segments;
+        
+        // First triangle of quad
+        createFragment([
+            topVertices[i].clone(),
+            bottomVertices[i].clone(),
+            bottomVertices[next].clone()
+        ], 'side');
+        
+        // Second triangle of quad
+        createFragment([
+            topVertices[i].clone(),
+            bottomVertices[next].clone(),
+            topVertices[next].clone()
+        ], 'side');
+    }
+    
+    // Subdivide each fragment for more dramatic explosion
+    subdivideFragments();
+}
+
+function createFragment(vertices, faceType) {
+    const geometry = new THREE.BufferGeometry();
+    
+    const positions = new Float32Array([
+        vertices[0].x, vertices[0].y, vertices[0].z,
+        vertices[1].x, vertices[1].y, vertices[1].z,
+        vertices[2].x, vertices[2].y, vertices[2].z
+    ]);
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.computeVertexNormals();
+    
+    // Calculate centroid
+    const centroid = new THREE.Vector3(
+        (vertices[0].x + vertices[1].x + vertices[2].x) / 3,
+        (vertices[0].y + vertices[1].y + vertices[2].y) / 3,
+        (vertices[0].z + vertices[1].z + vertices[2].z) / 3
+    );
+    
+    // Ethereal glowing material with slight variation
+    const hueShift = Math.random() * 0.1;
     const material = new THREE.MeshPhysicalMaterial({
-        color: 0x7b68ee,
-        emissive: 0x4ecdc4,
-        emissiveIntensity: 0.3,
+        color: new THREE.Color().setHSL(0.7 + hueShift, 0.6, 0.5),
+        emissive: new THREE.Color().setHSL(0.5 + hueShift, 0.8, 0.3),
+        emissiveIntensity: 0.4,
         transparent: true,
         opacity: 1.0,
-        metalness: 0.3,
+        metalness: 0.4,
         roughness: 0.2,
         clearcoat: 1.0,
         clearcoatRoughness: 0.1,
         side: THREE.DoubleSide
     });
     
-    prismMesh = new THREE.Mesh(geometry, material);
-    prismMesh.rotation.x = Math.PI * 0.1;
-    scene.add(prismMesh);
+    const mesh = new THREE.Mesh(geometry, material);
+    prismGroup.add(mesh);
+    prismFragments.push(mesh);
     
-    // Add edge glow
+    // Calculate explosion direction (outward from center, with some randomness)
+    const explosionDir = centroid.clone().normalize();
+    explosionDir.x += (Math.random() - 0.5) * 0.5;
+    explosionDir.y += (Math.random() - 0.5) * 0.5;
+    explosionDir.z += (Math.random() - 0.5) * 0.5;
+    explosionDir.normalize();
+    
+    // Store fragment data for animation
+    fragmentData.push({
+        mesh: mesh,
+        originalPosition: new THREE.Vector3(0, 0, 0),
+        originalRotation: new THREE.Euler(0, 0, 0),
+        explosionDirection: explosionDir,
+        explosionDistance: 4 + Math.random() * 6,
+        rotationSpeed: new THREE.Vector3(
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8
+        ),
+        delay: Math.random() * 0.2, // Staggered explosion
+        centroid: centroid
+    });
+    
+    // Add glowing edges
     const edgeGeometry = new THREE.EdgesGeometry(geometry);
     const edgeMaterial = new THREE.LineBasicMaterial({
         color: 0x4ecdc4,
         transparent: true,
-        opacity: 0.8,
-        linewidth: 2
+        opacity: 0.9
     });
     const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-    prismMesh.add(edges);
+    mesh.add(edges);
+    mesh.userData.edges = edges;
+}
+
+function subdivideFragments() {
+    // Store original fragments to subdivide
+    const originalFragments = [...prismFragments];
+    const originalData = [...fragmentData];
+    
+    // Clear arrays - we'll rebuild them
+    prismFragments = [];
+    fragmentData = [];
+    
+    // Subdivide each original fragment into 4 pieces
+    for (let i = 0; i < originalFragments.length; i++) {
+        const fragment = originalFragments[i];
+        const positions = fragment.geometry.attributes.position.array;
+        
+        const v0 = new THREE.Vector3(positions[0], positions[1], positions[2]);
+        const v1 = new THREE.Vector3(positions[3], positions[4], positions[5]);
+        const v2 = new THREE.Vector3(positions[6], positions[7], positions[8]);
+        
+        // Get midpoints
+        const m01 = v0.clone().add(v1).multiplyScalar(0.5);
+        const m12 = v1.clone().add(v2).multiplyScalar(0.5);
+        const m20 = v2.clone().add(v0).multiplyScalar(0.5);
+        
+        // Remove original from scene
+        prismGroup.remove(fragment);
+        fragment.geometry.dispose();
+        fragment.material.dispose();
+        
+        // Create 4 sub-triangles
+        createSubFragment([v0.clone(), m01.clone(), m20.clone()]);
+        createSubFragment([m01.clone(), v1.clone(), m12.clone()]);
+        createSubFragment([m20.clone(), m12.clone(), v2.clone()]);
+        createSubFragment([m01.clone(), m12.clone(), m20.clone()]);
+    }
+}
+
+function createSubFragment(vertices) {
+    const geometry = new THREE.BufferGeometry();
+    
+    const positions = new Float32Array([
+        vertices[0].x, vertices[0].y, vertices[0].z,
+        vertices[1].x, vertices[1].y, vertices[1].z,
+        vertices[2].x, vertices[2].y, vertices[2].z
+    ]);
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.computeVertexNormals();
+    
+    const centroid = new THREE.Vector3(
+        (vertices[0].x + vertices[1].x + vertices[2].x) / 3,
+        (vertices[0].y + vertices[1].y + vertices[2].y) / 3,
+        (vertices[0].z + vertices[1].z + vertices[2].z) / 3
+    );
+    
+    const hueShift = Math.random() * 0.15;
+    const material = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color().setHSL(0.7 + hueShift, 0.6, 0.55),
+        emissive: new THREE.Color().setHSL(0.5 + hueShift, 0.8, 0.35),
+        emissiveIntensity: 0.5,
+        transparent: true,
+        opacity: 1.0,
+        metalness: 0.4,
+        roughness: 0.15,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        side: THREE.DoubleSide
+    });
+    
+    const mesh = new THREE.Mesh(geometry, material);
+    prismGroup.add(mesh);
+    prismFragments.push(mesh);
+    
+    // Explosion direction based on centroid
+    const explosionDir = centroid.clone().normalize();
+    explosionDir.x += (Math.random() - 0.5) * 0.8;
+    explosionDir.y += (Math.random() - 0.5) * 0.8;
+    explosionDir.z += (Math.random() - 0.5) * 0.8;
+    explosionDir.normalize();
+    
+    fragmentData.push({
+        mesh: mesh,
+        originalPosition: new THREE.Vector3(0, 0, 0),
+        originalRotation: new THREE.Euler(0, 0, 0),
+        explosionDirection: explosionDir,
+        explosionDistance: 5 + Math.random() * 8,
+        rotationSpeed: new THREE.Vector3(
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10
+        ),
+        delay: Math.random() * 0.3,
+        centroid: centroid
+    });
+    
+    // Add glowing edges
+    const edgeGeometry = new THREE.EdgesGeometry(geometry);
+    const edgeMaterial = new THREE.LineBasicMaterial({
+        color: 0x4ecdc4,
+        transparent: true,
+        opacity: 0.9
+    });
+    const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+    mesh.add(edges);
+    mesh.userData.edges = edges;
 }
 
 function createParticleSystem() {
@@ -405,20 +614,23 @@ function createParticleSystem() {
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
     const velocities = [];
+    const delays = new Float32Array(count);
     
-    // Base colors for particles
+    // Base colors for particles - more vibrant
     const colorPalette = [
         new THREE.Color(0x4ecdc4), // Cyan
         new THREE.Color(0xff6b9d), // Pink
         new THREE.Color(0x7b68ee), // Purple/Blue
-        new THREE.Color(0xf0f0ff)  // White
+        new THREE.Color(0xf0f0ff), // White
+        new THREE.Color(0xff9f43), // Orange sparks
+        new THREE.Color(0xa29bfe)  // Lavender
     ];
     
     for (let i = 0; i < count; i++) {
-        // Original position: on or near the prism surface
-        const angle = (Math.floor(i / (count / 5)) / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+        // Original position: tightly on the prism surface
+        const angle = (Math.floor(i / (count / 5)) / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
         const y = (Math.random() - 0.5) * height;
-        const r = radius * (0.8 + Math.random() * 0.4);
+        const r = radius * (0.9 + Math.random() * 0.2);
         
         const ox = Math.cos(angle) * r;
         const oy = y;
@@ -433,30 +645,38 @@ function createParticleSystem() {
         positions[i * 3 + 1] = oy;
         positions[i * 3 + 2] = oz;
         
-        // Exploded position: scattered in sphere
-        const explodeAngle = Math.random() * Math.PI * 2;
-        const explodePhi = Math.acos(2 * Math.random() - 1);
-        const explodeR = explosionRadius * (0.5 + Math.random() * 0.5);
+        // Exploded position: burst outward in direction from center
+        const burstDir = new THREE.Vector3(ox, oy, oz).normalize();
+        burstDir.x += (Math.random() - 0.5) * 1.5;
+        burstDir.y += (Math.random() - 0.5) * 1.5;
+        burstDir.z += (Math.random() - 0.5) * 1.5;
+        burstDir.normalize();
         
-        explodedPositions[i * 3] = explodeR * Math.sin(explodePhi) * Math.cos(explodeAngle);
-        explodedPositions[i * 3 + 1] = explodeR * Math.sin(explodePhi) * Math.sin(explodeAngle);
-        explodedPositions[i * 3 + 2] = explodeR * Math.cos(explodePhi);
+        const explodeR = explosionRadius * (0.6 + Math.random() * 0.8);
         
-        // Random velocity for animation variation
+        explodedPositions[i * 3] = burstDir.x * explodeR;
+        explodedPositions[i * 3 + 1] = burstDir.y * explodeR;
+        explodedPositions[i * 3 + 2] = burstDir.z * explodeR;
+        
+        // Random velocity for sparkle motion
         velocities.push({
-            x: (Math.random() - 0.5) * 0.02,
-            y: (Math.random() - 0.5) * 0.02,
-            z: (Math.random() - 0.5) * 0.02
+            x: (Math.random() - 0.5) * 0.05,
+            y: (Math.random() - 0.5) * 0.05,
+            z: (Math.random() - 0.5) * 0.05,
+            phase: Math.random() * Math.PI * 2
         });
+        
+        // Staggered delays for cascade effect
+        delays[i] = Math.random() * 0.4;
         
         // Color with variation
         const baseColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-        colors[i * 3] = baseColor.r + (Math.random() - 0.5) * colorVariation;
-        colors[i * 3 + 1] = baseColor.g + (Math.random() - 0.5) * colorVariation;
-        colors[i * 3 + 2] = baseColor.b + (Math.random() - 0.5) * colorVariation;
+        colors[i * 3] = Math.min(1, baseColor.r + (Math.random() - 0.5) * colorVariation);
+        colors[i * 3 + 1] = Math.min(1, baseColor.g + (Math.random() - 0.5) * colorVariation);
+        colors[i * 3 + 2] = Math.min(1, baseColor.b + (Math.random() - 0.5) * colorVariation);
         
-        // Size with variation
-        sizes[i] = baseSize + Math.random() * sizeVariation;
+        // Size with more variation for depth
+        sizes[i] = baseSize * (0.5 + Math.random() * 1.5);
     }
     
     // Store for animation
@@ -468,6 +688,7 @@ function createParticleSystem() {
     particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    particleGeometry.setAttribute('delay', new THREE.BufferAttribute(delays, 1));
     
     const particleMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -477,6 +698,7 @@ function createParticleSystem() {
         vertexShader: `
             attribute float size;
             attribute vec3 color;
+            attribute float delay;
             varying vec3 vColor;
             varying float vAlpha;
             uniform float time;
@@ -485,15 +707,23 @@ function createParticleSystem() {
             void main() {
                 vColor = color;
                 
-                // Alpha based on openness - particles more visible when exploded
-                vAlpha = 0.3 + openness * 0.7;
+                // Delayed openness for cascade effect
+                float delayedOpenness = max(0.0, (openness - delay) / (1.0 - delay));
+                delayedOpenness = min(1.0, delayedOpenness);
+                
+                // Alpha ramps up as particles burst out
+                vAlpha = delayedOpenness * (1.0 - delayedOpenness * 0.3);
                 
                 vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
                 
-                // Shimmer effect
-                float shimmer = sin(time * 3.0 + position.x * 5.0 + position.y * 5.0) * 0.2 + 0.8;
+                // Shimmer and pulse effect
+                float shimmer = sin(time * 4.0 + position.x * 8.0 + position.y * 8.0) * 0.3 + 0.7;
+                float pulse = sin(time * 2.0 + delay * 10.0) * 0.2 + 1.0;
                 
-                gl_PointSize = size * shimmer * (200.0 / -mvPosition.z) * (0.5 + openness * 0.5);
+                // Size grows as it explodes
+                float sizeMultiplier = 0.3 + delayedOpenness * 1.2;
+                
+                gl_PointSize = size * shimmer * pulse * (250.0 / -mvPosition.z) * sizeMultiplier;
                 gl_Position = projectionMatrix * mvPosition;
             }
         `,
@@ -505,12 +735,15 @@ function createParticleSystem() {
                 float dist = length(gl_PointCoord - vec2(0.5));
                 if (dist > 0.5) discard;
                 
-                // Soft glow falloff
-                float alpha = (1.0 - smoothstep(0.0, 0.5, dist)) * vAlpha;
+                // Soft glow falloff with bright core
+                float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+                float core = 1.0 - smoothstep(0.0, 0.15, dist);
                 
-                // Core glow
-                float core = 1.0 - smoothstep(0.0, 0.2, dist);
-                vec3 finalColor = vColor + vec3(core * 0.5);
+                // Bright white core, colored glow
+                vec3 coreColor = vec3(1.0, 1.0, 1.0);
+                vec3 finalColor = mix(vColor * 1.5, coreColor, core * 0.7);
+                
+                float alpha = glow * vAlpha;
                 
                 gl_FragColor = vec4(finalColor, alpha);
             }
@@ -521,7 +754,6 @@ function createParticleSystem() {
     });
     
     particleSystem = new THREE.Points(particleGeometry, particleMaterial);
-    particleSystem.rotation.x = Math.PI * 0.1; // Match prism rotation
     scene.add(particleSystem);
 }
 
@@ -529,7 +761,9 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
+    if (composer) {
+        composer.setSize(window.innerWidth, window.innerHeight);
+    }
 }
 
 // ============================================
@@ -722,65 +956,103 @@ function animate() {
         starField.rotation.y = time * 0.01;
     }
     
-    // Render
-    composer.render();
+    // Render (use composer if available, otherwise standard renderer)
+    if (composer) {
+        composer.render();
+    } else {
+        renderer.render(scene, camera);
+    }
 }
 
 function updatePrism(time) {
-    if (!prismMesh) return;
+    if (!prismGroup) return;
     
-    // Fade out as hand opens
-    prismMesh.material.opacity = 1 - handOpenness * 0.9;
-    prismMesh.material.emissiveIntensity = 0.3 + handOpenness * 0.3;
+    // Rotate the entire group
+    prismGroup.rotation.y = time * 0.2 + ambientRotation;
+    prismGroup.rotation.x = Math.PI * 0.1 + Math.sin(time * 0.5) * 0.05;
     
-    // Scale down slightly when opening
-    const scale = 1 - handOpenness * 0.3;
-    prismMesh.scale.set(scale, scale, scale);
-    
-    // Rotation
-    prismMesh.rotation.y = time * 0.2 + ambientRotation;
-    prismMesh.rotation.x = Math.PI * 0.1 + Math.sin(time * 0.5) * 0.05;
-    
-    // Update edge visibility
-    const edges = prismMesh.children[0];
-    if (edges) {
-        edges.material.opacity = 0.8 - handOpenness * 0.6;
+    // Animate each fragment
+    for (let i = 0; i < fragmentData.length; i++) {
+        const data = fragmentData[i];
+        const mesh = data.mesh;
+        
+        // Apply delay to explosion (staggered effect)
+        const delayedOpenness = Math.max(0, (handOpenness - data.delay) / (1 - data.delay));
+        const t = easeOutCubic(Math.min(1, delayedOpenness));
+        
+        // Position: lerp from original to exploded
+        const explodedPos = data.explosionDirection.clone().multiplyScalar(data.explosionDistance * t);
+        mesh.position.copy(data.originalPosition).add(explodedPos);
+        
+        // Rotation: spin as it explodes
+        mesh.rotation.x = data.originalRotation.x + data.rotationSpeed.x * t;
+        mesh.rotation.y = data.originalRotation.y + data.rotationSpeed.y * t;
+        mesh.rotation.z = data.originalRotation.z + data.rotationSpeed.z * t;
+        
+        // Scale down slightly as pieces fly apart
+        const scale = 1 - t * 0.3;
+        mesh.scale.set(scale, scale, scale);
+        
+        // Fade out at the end of explosion
+        const fadeStart = 0.7;
+        const opacity = t > fadeStart ? 1 - ((t - fadeStart) / (1 - fadeStart)) : 1;
+        mesh.material.opacity = opacity;
+        mesh.material.emissiveIntensity = 0.4 + t * 0.4;
+        
+        // Edge glow
+        if (mesh.userData.edges) {
+            mesh.userData.edges.material.opacity = opacity * 0.9;
+        }
     }
+}
+
+// Easing function for smoother explosion
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function updateParticles(time) {
     if (!particleSystem) return;
     
     const positions = particleSystem.geometry.attributes.position.array;
+    const delays = particleSystem.geometry.attributes.delay.array;
     const count = positions.length / 3;
     
     for (let i = 0; i < count; i++) {
         const i3 = i * 3;
+        const delay = delays[i];
         
-        // Lerp between original and exploded positions
-        const t = handOpenness;
+        // Delayed openness for staggered explosion
+        const delayedOpenness = Math.max(0, (handOpenness - delay) / (1 - delay));
+        const t = easeOutCubic(Math.min(1, delayedOpenness));
         
-        // Add some variation with velocity
+        // Add some variation with velocity for sparkle
         const vel = particleVelocities[i];
-        const timeOffset = Math.sin(time + i) * 0.1;
+        const wobbleX = Math.sin(time * 3 + vel.phase) * 0.15 * t;
+        const wobbleY = Math.cos(time * 2.5 + vel.phase) * 0.15 * t;
+        const wobbleZ = Math.sin(time * 2 + vel.phase + 1) * 0.15 * t;
         
         positions[i3] = THREE.MathUtils.lerp(
             particleOriginalPositions[i3],
-            particleExplodedPositions[i3] + vel.x * time * 10,
+            particleExplodedPositions[i3],
             t
-        ) + (t > 0.1 ? Math.sin(time * 2 + i) * 0.05 * t : 0);
+        ) + wobbleX;
         
         positions[i3 + 1] = THREE.MathUtils.lerp(
             particleOriginalPositions[i3 + 1],
-            particleExplodedPositions[i3 + 1] + vel.y * time * 10,
+            particleExplodedPositions[i3 + 1],
             t
-        ) + (t > 0.1 ? Math.cos(time * 2 + i * 0.5) * 0.05 * t : 0);
+        ) + wobbleY;
         
         positions[i3 + 2] = THREE.MathUtils.lerp(
             particleOriginalPositions[i3 + 2],
-            particleExplodedPositions[i3 + 2] + vel.z * time * 10,
+            particleExplodedPositions[i3 + 2],
             t
-        );
+        ) + wobbleZ;
     }
     
     particleSystem.geometry.attributes.position.needsUpdate = true;
