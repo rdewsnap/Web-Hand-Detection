@@ -574,3 +574,153 @@ html, body {
         width: 6px;
     }
 }
+
+/* ============================================
+   CHESS DEMO UI
+   ============================================ */
+
+#chess-difficulty-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, rgba(26, 10, 46, 0.95) 0%, rgba(13, 5, 24, 0.98) 100%);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    border-radius: 20px;
+    padding: 40px 50px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 
+        0 0 40px rgba(78, 205, 196, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+#chess-difficulty-panel h2 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--nebula-cyan), var(--nebula-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#chess-difficulty-panel p {
+    color: rgba(240, 240, 255, 0.7);
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+}
+
+.difficulty-selector {
+    margin-bottom: 30px;
+}
+
+.difficulty-selector label {
+    display: block;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--star-white);
+}
+
+.difficulty-selector label span {
+    color: var(--nebula-cyan);
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+#difficulty-slider {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, var(--nebula-cyan), var(--nebula-pink));
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+#difficulty-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: var(--star-white);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+    transition: transform 0.2s;
+}
+
+#difficulty-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+#difficulty-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: var(--star-white);
+    border-radius: 50%;
+    cursor: grab;
+    border: none;
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+}
+
+#start-chess-btn {
+    padding: 14px 40px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--cosmic-deep);
+    background: linear-gradient(135deg, var(--nebula-cyan), var(--nebula-blue));
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#start-chess-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(78, 205, 196, 0.5);
+}
+
+#chess-status {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(13, 5, 24, 0.9);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    color: var(--star-white);
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+#chess-status.game-over {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(255, 107, 157, 0.3));
+    border-color: var(--nebula-pink);
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* Mobile adjustments for chess */
+@media (max-width: 768px) {
+    #chess-difficulty-panel {
+        padding: 30px;
+        width: 90%;
+        max-width: 350px;
+    }
+
+    #chess-difficulty-panel h2 {
+        font-size: 1.5rem;
+    }
+
+    #chess-status {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+    }
+}

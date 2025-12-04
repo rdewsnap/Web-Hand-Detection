@@ -14,6 +14,12 @@ Pilot a low-poly airplane through a neon terrain using hand orientation.
 - **Control**: Hold palm facing camera for level flight
 - **Steering**: Tilt hand left/right to roll, up/down to pitch
 
+### Hand Chess
+Play chess against a low-poly elf opponent using grab gestures.
+- **Control**: Close fist to grab pieces, open hand to drop
+- **Difficulty**: Select 1-10 before starting (affects AI search depth)
+- **AI**: Minimax with alpha-beta pruning
+
 ## Features
 
 - **Real-time Hand Tracking** - MediaPipe Hands for accurate gesture detection
@@ -49,7 +55,8 @@ Then open `http://localhost:8080` in your browser.
 │   ├── handTracking.js     # Shared hand detection module
 │   └── demos/
 │       ├── cosmicPrism.js  # Exploding prism demo
-│       └── airplane.js     # Flight control demo
+│       ├── airplane.js     # Flight control demo
+│       └── chess.js        # Hand chess demo
 └── README.md
 ```
 
@@ -89,6 +96,9 @@ HandTracking.isMobile()                          // Boolean
 | Flight Control | Palm forward | Level flight |
 | Flight Control | Tilt left/right | Bank turn |
 | Flight Control | Tilt up/down | Climb/dive |
+| Hand Chess | Closed fist over piece | Grab piece |
+| Hand Chess | Open hand | Drop piece |
+| Hand Chess | Move hand | Move grabbed piece |
 
 ## Browser Support
 
