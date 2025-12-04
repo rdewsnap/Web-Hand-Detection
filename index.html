@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Cosmic Prism - Hand Controlled</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Three.js Post-processing -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/Pass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    
+    <!-- MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="loader">
+            <div class="loader-ring"></div>
+            <p>Initializing hand detection...</p>
+        </div>
+    </div>
+
+    <!-- Permission denied message -->
+    <div id="permission-denied" class="hidden">
+        <div class="message-box">
+            <h2>Camera Access Required</h2>
+            <p>Please allow camera access to experience the cosmic prism.</p>
+            <button onclick="location.reload()">Try Again</button>
+        </div>
+    </div>
+
+    <!-- Three.js canvas container -->
+    <div id="canvas-container"></div>
+
+    <!-- Hidden video for webcam -->
+    <video id="webcam" autoplay playsinline></video>
+
+    <!-- Webcam preview -->
+    <div id="webcam-preview">
+        <canvas id="preview-canvas"></canvas>
+        <div class="preview-label">Hand Tracking</div>
+    </div>
+
+    <!-- Hand openness indicator -->
+    <div id="openness-indicator">
+        <div class="indicator-bar">
+            <div class="indicator-fill"></div>
+        </div>
+        <span class="indicator-label">Openness</span>
+    </div>
+
+    <!-- Instructions -->
+    <div id="instructions">
+        <p>Show your hand to the camera</p>
+        <p class="sub">Open/close your hand to control the explosion</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

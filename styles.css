@@ -1,0 +1,332 @@
+/* CSS Reset and Base */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --cosmic-purple: #1a0a2e;
+    --nebula-pink: #ff6b9d;
+    --nebula-cyan: #4ecdc4;
+    --nebula-blue: #7b68ee;
+    --star-white: #f0f0ff;
+    --glow-intensity: 0.8;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--cosmic-purple);
+    color: var(--star-white);
+}
+
+/* Canvas Container */
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#canvas-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Hidden video element */
+#webcam {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+/* Webcam Preview */
+#webcam-preview {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 160px;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(78, 205, 196, 0.4);
+    box-shadow: 0 0 20px rgba(78, 205, 196, 0.2),
+                inset 0 0 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+#webcam-preview #preview-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+#webcam-preview .preview-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 4px 8px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--nebula-cyan);
+    text-align: center;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0518 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#loading-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader {
+    text-align: center;
+}
+
+.loader-ring {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border: 3px solid transparent;
+    border-top-color: var(--nebula-cyan);
+    border-right-color: var(--nebula-pink);
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+    box-shadow: 0 0 30px rgba(78, 205, 196, 0.3),
+                inset 0 0 30px rgba(255, 107, 157, 0.1);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loader p {
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(240, 240, 255, 0.7);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Permission Denied */
+#permission-denied {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0518 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+#permission-denied.hidden {
+    display: none;
+}
+
+.message-box {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 107, 157, 0.3);
+    max-width: 400px;
+    margin: 20px;
+}
+
+.message-box h2 {
+    font-size: 24px;
+    margin-bottom: 16px;
+    color: var(--nebula-pink);
+    font-weight: 300;
+}
+
+.message-box p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(240, 240, 255, 0.7);
+    margin-bottom: 24px;
+}
+
+.message-box button {
+    padding: 12px 32px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--nebula-cyan), var(--nebula-blue));
+    border: none;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.message-box button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(78, 205, 196, 0.5);
+}
+
+/* Openness Indicator */
+#openness-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.indicator-bar {
+    width: 8px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.indicator-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: linear-gradient(to top, var(--nebula-cyan), var(--nebula-pink));
+    border-radius: 4px;
+    transition: height 0.1s ease-out;
+    box-shadow: 0 0 10px var(--nebula-cyan);
+}
+
+.indicator-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(240, 240, 255, 0.5);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+}
+
+/* Instructions */
+#instructions {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+
+#instructions p {
+    font-size: 16px;
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--star-white);
+    text-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+}
+
+#instructions p.sub {
+    font-size: 12px;
+    margin-top: 8px;
+    color: rgba(240, 240, 255, 0.5);
+    letter-spacing: 2px;
+}
+
+/* Hidden helper class */
+.hidden {
+    display: none !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    #webcam-preview {
+        width: 120px;
+        height: 90px;
+        bottom: 10px;
+        left: 10px;
+    }
+
+    #openness-indicator {
+        bottom: 10px;
+        right: 10px;
+    }
+
+    .indicator-bar {
+        height: 80px;
+    }
+
+    #instructions {
+        top: 20px;
+    }
+
+    #instructions p {
+        font-size: 12px;
+        letter-spacing: 2px;
+    }
+
+    #instructions p.sub {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    #webcam-preview {
+        width: 100px;
+        height: 75px;
+    }
+
+    .indicator-bar {
+        height: 60px;
+        width: 6px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    #webcam-preview {
+        bottom: 15px;
+        left: 15px;
+    }
+}
+
