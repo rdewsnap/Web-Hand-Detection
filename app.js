@@ -53,6 +53,11 @@ let smoothedOpenness = 0;
 let isHandDetected = false;
 let ambientRotation = 0;
 
+// Hand rotation tracking
+let handRotation = new THREE.Quaternion();
+let targetHandRotation = new THREE.Quaternion();
+let smoothedHandRotation = new THREE.Quaternion();
+
 // Particle data
 let particlePositions = [];
 let particleOriginalPositions = [];
@@ -862,6 +867,9 @@ function onHandResults(results) {
         // Calculate hand openness
         targetHandOpenness = calculateHandOpenness(landmarks);
         
+        // Calculate hand rotation (pitch, roll, yaw)
+        targetHandRotation = calculateHandRotation(landmarks);
+        
         // Fade instructions when hand detected
         instructions.style.opacity = '0.3';
     } else {
@@ -951,13 +959,64 @@ function calculateHandOpenness(landmarks) {
     
     const avgRatio = totalRatio / fingers.length;
     
-    // Normalized ratios: closed fist ~0.3-0.5, open hand ~0.9-1.2
+    // Normalized ratios: closed fist ~0.3-0.5, open hand ~0.7-0.9
     // Higher minRatio = more forgiving for keeping fist "closed"
-    const minRatio = 0.50;  // Dead zone for closed fist
-    const maxRatio = 1.15;  // Increased to properly detect full open
+    const minRatio = 0.45;  // Dead zone for closed fist
+    const maxRatio = 0.85;  // Lowered - easier to reach full open
     
     const normalized = (avgRatio - minRatio) / (maxRatio - minRatio);
     return Math.max(0, Math.min(1, normalized));
+}
+
+function calculateHandRotation(landmarks) {
+    // Calculate hand orientation from landmarks
+    // Using wrist, index MCP, and pinky MCP to define a coordinate frame
+    
+    const wrist = new THREE.Vector3(
+        landmarks[0].x - 0.5,  // Center around 0
+        -(landmarks[0].y - 0.5),  // Flip Y (screen coords are inverted)
+        landmarks[0].z || 0
+    );
+    
+    const indexMCP = new THREE.Vector3(
+        landmarks[5].x - 0.5,
+        -(landmarks[5].y - 0.5),
+        landmarks[5].z || 0
+    );
+    
+    const pinkyMCP = new THREE.Vector3(
+        landmarks[17].x - 0.5,
+        -(landmarks[17].y - 0.5),
+        landmarks[17].z || 0
+    );
+    
+    const middleMCP = new THREE.Vector3(
+        landmarks[9].x - 0.5,
+        -(landmarks[9].y - 0.5),
+        landmarks[9].z || 0
+    );
+    
+    // Hand "up" direction (wrist to middle finger)
+    const handUp = new THREE.Vector3().subVectors(middleMCP, wrist).normalize();
+    
+    // Hand "right" direction (pinky to index - reversed for correct visual roll)
+    const handRight = new THREE.Vector3().subVectors(indexMCP, pinkyMCP).normalize();
+    
+    // Hand "forward" direction (palm normal)
+    const handForward = new THREE.Vector3().crossVectors(handRight, handUp).normalize();
+    
+    // Recalculate right to ensure orthogonality
+    handRight.crossVectors(handUp, handForward).normalize();
+    
+    // Create rotation matrix from basis vectors
+    const rotMatrix = new THREE.Matrix4();
+    rotMatrix.makeBasis(handRight, handUp, handForward);
+    
+    // Convert to quaternion
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromRotationMatrix(rotMatrix);
+    
+    return quaternion;
 }
 
 // ============================================
@@ -971,6 +1030,12 @@ function animate() {
     // Smooth the hand openness value
     smoothedOpenness += (targetHandOpenness - smoothedOpenness) * CONFIG.smoothing;
     handOpenness = smoothedOpenness;
+    
+    // Smooth the hand rotation
+    if (isHandDetected) {
+        smoothedHandRotation.slerp(targetHandRotation, CONFIG.smoothing * 1.5);
+        handRotation.copy(smoothedHandRotation);
+    }
     
     // Update UI indicator
     indicatorFill.style.height = `${handOpenness * 100}%`;
@@ -1006,9 +1071,12 @@ function animate() {
 function updatePrism(time) {
     if (!prismGroup) return;
     
-    // Rotate the entire group
-    prismGroup.rotation.y = time * 0.2 + ambientRotation;
-    prismGroup.rotation.x = Math.PI * 0.1 + Math.sin(time * 0.5) * 0.05;
+    // Base ambient rotation for the group (always applies)
+    const baseRotationY = time * 0.2 + ambientRotation;
+    const baseRotationX = Math.PI * 0.1 + Math.sin(time * 0.5) * 0.05;
+    
+    // Set base rotation
+    prismGroup.rotation.set(baseRotationX, baseRotationY, 0);
     
     // First pass: calculate base positions
     const basePositions = [];
@@ -1058,7 +1126,15 @@ function updatePrism(time) {
         const mesh = data.mesh;
         const t = basePositions[i].t;
         
-        mesh.position.copy(basePositions[i].pos).add(repulsion);
+        // Calculate position with repulsion
+        const finalPos = basePositions[i].pos.clone().add(repulsion);
+        
+        // Apply hand rotation to exploded pieces (rotate around center)
+        if (isHandDetected && t > 0.05) {
+            finalPos.applyQuaternion(handRotation);
+        }
+        
+        mesh.position.copy(finalPos);
         
         // Rotation: spin as it explodes
         mesh.rotation.x = data.originalRotation.x + data.rotationSpeed.x * t;
@@ -1112,23 +1188,36 @@ function updateParticles(time) {
         const wobbleY = Math.cos(time * 2.5 + vel.phase) * 0.15 * t;
         const wobbleZ = Math.sin(time * 2 + vel.phase + 1) * 0.15 * t;
         
-        positions[i3] = THREE.MathUtils.lerp(
+        let px = THREE.MathUtils.lerp(
             particleOriginalPositions[i3],
             particleExplodedPositions[i3],
             t
         ) + wobbleX;
         
-        positions[i3 + 1] = THREE.MathUtils.lerp(
+        let py = THREE.MathUtils.lerp(
             particleOriginalPositions[i3 + 1],
             particleExplodedPositions[i3 + 1],
             t
         ) + wobbleY;
         
-        positions[i3 + 2] = THREE.MathUtils.lerp(
+        let pz = THREE.MathUtils.lerp(
             particleOriginalPositions[i3 + 2],
             particleExplodedPositions[i3 + 2],
             t
         ) + wobbleZ;
+        
+        // Apply hand rotation to exploded particles
+        if (isHandDetected && t > 0.05) {
+            const pos = new THREE.Vector3(px, py, pz);
+            pos.applyQuaternion(handRotation);
+            px = pos.x;
+            py = pos.y;
+            pz = pos.z;
+        }
+        
+        positions[i3] = px;
+        positions[i3 + 1] = py;
+        positions[i3 + 2] = pz;
     }
     
     particleSystem.geometry.attributes.position.needsUpdate = true;
