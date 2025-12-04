@@ -56,6 +56,20 @@ const ChessDemo = (function() {
     // Piece geometries (cached)
     const pieceGeometries = {};
 
+    // Chess.js API compatibility helpers (0.12.x uses snake_case, newer uses camelCase)
+    function isGameOver() {
+        return chess.game_over ? chess.game_over() : chess.isGameOver();
+    }
+    function isCheckmate() {
+        return chess.in_checkmate ? chess.in_checkmate() : chess.isCheckmate();
+    }
+    function isDraw() {
+        return chess.in_draw ? chess.in_draw() : chess.isDraw();
+    }
+    function isCheck() {
+        return chess.in_check ? chess.in_check() : chess.isCheck();
+    }
+
     /**
      * Initialize the demo
      */
@@ -633,14 +647,14 @@ const ChessDemo = (function() {
     function updateStatus() {
         if (!statusText) return;
         
-        if (chess.isCheckmate()) {
+        if (isCheckmate()) {
             const winner = chess.turn() === 'w' ? 'Elf' : 'You';
             statusText.textContent = `Checkmate! ${winner} wins!`;
             statusText.classList.add('game-over');
-        } else if (chess.isDraw()) {
+        } else if (isDraw()) {
             statusText.textContent = 'Draw!';
             statusText.classList.add('game-over');
-        } else if (chess.isCheck()) {
+        } else if (isCheck()) {
             statusText.textContent = chess.turn() === 'w' ? 'Check! Your turn' : 'Elf is thinking...';
         } else if (isThinking) {
             statusText.textContent = 'Elf is thinking...';
@@ -744,7 +758,7 @@ const ChessDemo = (function() {
     }
 
     function makeAIMove() {
-        if (chess.isGameOver()) return;
+        if (isGameOver()) return;
         
         isThinking = true;
         updateStatus();
@@ -794,7 +808,7 @@ const ChessDemo = (function() {
     }
 
     function negamax(depth, alpha, beta, color) {
-        if (depth === 0 || chess.isGameOver()) {
+        if (depth === 0 || isGameOver()) {
             return color * evaluateBoard();
         }
         
@@ -831,7 +845,7 @@ const ChessDemo = (function() {
         }
         
         // Bonus for check
-        if (chess.isCheck()) {
+        if (isCheck()) {
             score += chess.turn() === 'w' ? -0.5 : 0.5;
         }
         
@@ -989,7 +1003,6 @@ const ChessDemo = (function() {
         
         // Only try to make move if we have a valid target square
         if (targetSquare) {
-            // Try to make the move
             const move = chess.move({
                 from: selectedSquare,
                 to: targetSquare,
@@ -998,12 +1011,11 @@ const ChessDemo = (function() {
             
             if (move) {
                 moveSuccessful = true;
-                // Valid move
                 updatePiecePositions();
                 updateStatus();
                 
                 // AI's turn
-                if (!chess.isGameOver() && chess.turn() === 'b') {
+                if (!isGameOver() && chess.turn() === 'b') {
                     setTimeout(makeAIMove, 300);
                 }
             }
