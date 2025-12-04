@@ -15,10 +15,8 @@ const CONFIG = {
         explosionRadius: 12,
         colorVariation: 0.25
     },
-    prism: {
-        radius: 1.5,
-        height: 3,
-        segments: 5
+    polyhedron: {
+        scale: 1.8
     },
     camera: {
         fov: 60,
@@ -130,7 +128,7 @@ async function initThreeJS() {
     // Create scene elements
     createCosmicBackground();
     createStarField();
-    createPentagonalPrism();
+    createTruncatedOctahedron();
     createParticleSystem();
     
     // Lighting
@@ -353,75 +351,100 @@ function createStarField() {
     scene.add(starField);
 }
 
-function createPentagonalPrism() {
-    const { radius, height, segments } = CONFIG.prism;
+function createTruncatedOctahedron() {
+    const scale = CONFIG.polyhedron.scale;
     
     // Create a group to hold all fragments
     prismGroup = new THREE.Group();
     prismGroup.rotation.x = Math.PI * 0.1;
     scene.add(prismGroup);
     
-    // Generate pentagon vertices
-    const topVertices = [];
-    const bottomVertices = [];
+    // Truncated octahedron vertices - permutations of (0, ±1, ±2)
+    const vertices = [];
+    const coords = [
+        [0, 1, 2], [0, 1, -2], [0, -1, 2], [0, -1, -2],
+        [0, 2, 1], [0, 2, -1], [0, -2, 1], [0, -2, -1],
+        [1, 0, 2], [1, 0, -2], [-1, 0, 2], [-1, 0, -2],
+        [1, 2, 0], [1, -2, 0], [-1, 2, 0], [-1, -2, 0],
+        [2, 0, 1], [2, 0, -1], [-2, 0, 1], [-2, 0, -1],
+        [2, 1, 0], [2, -1, 0], [-2, 1, 0], [-2, -1, 0]
+    ];
     
-    for (let i = 0; i < segments; i++) {
-        const angle = (i / segments) * Math.PI * 2 - Math.PI / 2;
-        topVertices.push(new THREE.Vector3(
-            Math.cos(angle) * radius,
-            height / 2,
-            Math.sin(angle) * radius
-        ));
-        bottomVertices.push(new THREE.Vector3(
-            Math.cos(angle) * radius,
-            -height / 2,
-            Math.sin(angle) * radius
-        ));
+    for (const c of coords) {
+        vertices.push(new THREE.Vector3(c[0] * scale * 0.5, c[1] * scale * 0.5, c[2] * scale * 0.5));
     }
     
-    const centerTop = new THREE.Vector3(0, height / 2, 0);
-    const centerBottom = new THREE.Vector3(0, -height / 2, 0);
+    // Helper to find vertex by coordinates
+    const findVertex = (x, y, z) => {
+        for (const v of vertices) {
+            if (Math.abs(v.x - x * scale * 0.5) < 0.01 && 
+                Math.abs(v.y - y * scale * 0.5) < 0.01 && 
+                Math.abs(v.z - z * scale * 0.5) < 0.01) {
+                return v.clone();
+            }
+        }
+        return null;
+    };
     
-    // Create fragments for top pentagon (5 triangles)
-    for (let i = 0; i < segments; i++) {
-        const next = (i + 1) % segments;
-        createFragment([
-            centerTop.clone(),
-            topVertices[i].clone(),
-            topVertices[next].clone()
-        ], 'top');
+    // 6 Square faces (at the 6 axis directions)
+    const squareFaces = [
+        // +X face
+        [[2,1,0], [2,0,1], [2,-1,0], [2,0,-1]],
+        // -X face
+        [[-2,1,0], [-2,0,-1], [-2,-1,0], [-2,0,1]],
+        // +Y face
+        [[1,2,0], [0,2,1], [-1,2,0], [0,2,-1]],
+        // -Y face
+        [[1,-2,0], [0,-2,-1], [-1,-2,0], [0,-2,1]],
+        // +Z face
+        [[1,0,2], [0,1,2], [-1,0,2], [0,-1,2]],
+        // -Z face
+        [[1,0,-2], [0,-1,-2], [-1,0,-2], [0,1,-2]]
+    ];
+    
+    // 8 Hexagonal faces (at the 8 corners)
+    const hexFaces = [
+        // +X+Y+Z octant
+        [[2,1,0], [2,0,1], [1,0,2], [0,1,2], [0,2,1], [1,2,0]],
+        // +X+Y-Z octant
+        [[2,1,0], [1,2,0], [0,2,-1], [0,1,-2], [1,0,-2], [2,0,-1]],
+        // +X-Y+Z octant
+        [[2,-1,0], [1,-2,0], [0,-2,1], [0,-1,2], [1,0,2], [2,0,1]],
+        // +X-Y-Z octant
+        [[2,-1,0], [2,0,-1], [1,0,-2], [0,-1,-2], [0,-2,-1], [1,-2,0]],
+        // -X+Y+Z octant
+        [[-2,1,0], [-1,2,0], [0,2,1], [0,1,2], [-1,0,2], [-2,0,1]],
+        // -X+Y-Z octant
+        [[-2,1,0], [-2,0,-1], [-1,0,-2], [0,1,-2], [0,2,-1], [-1,2,0]],
+        // -X-Y+Z octant
+        [[-2,-1,0], [-2,0,1], [-1,0,2], [0,-1,2], [0,-2,1], [-1,-2,0]],
+        // -X-Y-Z octant
+        [[-2,-1,0], [-1,-2,0], [0,-2,-1], [0,-1,-2], [-1,0,-2], [-2,0,-1]]
+    ];
+    
+    // Create square faces (2 triangles each)
+    for (const face of squareFaces) {
+        const v = face.map(c => findVertex(c[0], c[1], c[2]));
+        createFragment([v[0], v[1], v[2]], 'square');
+        createFragment([v[0], v[2], v[3]], 'square');
     }
     
-    // Create fragments for bottom pentagon (5 triangles)
-    for (let i = 0; i < segments; i++) {
-        const next = (i + 1) % segments;
-        createFragment([
-            centerBottom.clone(),
-            bottomVertices[next].clone(),
-            bottomVertices[i].clone()
-        ], 'bottom');
-    }
-    
-    // Create fragments for side faces (5 rectangles = 10 triangles)
-    for (let i = 0; i < segments; i++) {
-        const next = (i + 1) % segments;
+    // Create hexagonal faces (4 triangles each, fan from center)
+    for (const face of hexFaces) {
+        const v = face.map(c => findVertex(c[0], c[1], c[2]));
+        // Calculate center of hexagon
+        const center = new THREE.Vector3();
+        for (const vert of v) center.add(vert);
+        center.divideScalar(v.length);
         
-        // First triangle of quad
-        createFragment([
-            topVertices[i].clone(),
-            bottomVertices[i].clone(),
-            bottomVertices[next].clone()
-        ], 'side');
-        
-        // Second triangle of quad
-        createFragment([
-            topVertices[i].clone(),
-            bottomVertices[next].clone(),
-            topVertices[next].clone()
-        ], 'side');
+        // Create triangles fanning from center
+        for (let i = 0; i < v.length; i++) {
+            const next = (i + 1) % v.length;
+            createFragment([center.clone(), v[i].clone(), v[next].clone()], 'hex');
+        }
     }
     
-    // Subdivide each fragment for more dramatic explosion
+    // Subdivide for more dramatic explosion
     subdivideFragments();
 }
 
@@ -606,7 +629,7 @@ function createSubFragment(vertices) {
 
 function createParticleSystem() {
     const { count, baseSize, sizeVariation, explosionRadius, colorVariation } = CONFIG.particles;
-    const { radius, height } = CONFIG.prism;
+    const polyScale = CONFIG.polyhedron.scale;
     
     const positions = new Float32Array(count * 3);
     const originalPositions = new Float32Array(count * 3);
@@ -627,14 +650,14 @@ function createParticleSystem() {
     ];
     
     for (let i = 0; i < count; i++) {
-        // Original position: tightly on the prism surface
-        const angle = (Math.floor(i / (count / 5)) / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-        const y = (Math.random() - 0.5) * height;
-        const r = radius * (0.9 + Math.random() * 0.2);
+        // Original position: on the polyhedron surface (spherical distribution)
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const r = polyScale * (0.9 + Math.random() * 0.2);
         
-        const ox = Math.cos(angle) * r;
-        const oy = y;
-        const oz = Math.sin(angle) * r;
+        const ox = r * Math.sin(phi) * Math.cos(theta);
+        const oy = r * Math.sin(phi) * Math.sin(theta);
+        const oz = r * Math.cos(phi);
         
         originalPositions[i * 3] = ox;
         originalPositions[i * 3 + 1] = oy;
@@ -928,11 +951,10 @@ function calculateHandOpenness(landmarks) {
     
     const avgRatio = totalRatio / fingers.length;
     
-    // Normalized ratios: closed fist ~0.3-0.5, open hand ~0.9-1.1
+    // Normalized ratios: closed fist ~0.3-0.5, open hand ~0.9-1.2
     // Higher minRatio = more forgiving for keeping fist "closed"
-    // Lower maxRatio = easier to reach full "open"
-    const minRatio = 0.55;  // Increased from 0.35 - larger dead zone for closed fist
-    const maxRatio = 0.95;
+    const minRatio = 0.50;  // Dead zone for closed fist
+    const maxRatio = 1.15;  // Increased to properly detect full open
     
     const normalized = (avgRatio - minRatio) / (maxRatio - minRatio);
     return Math.max(0, Math.min(1, normalized));
@@ -988,18 +1010,55 @@ function updatePrism(time) {
     prismGroup.rotation.y = time * 0.2 + ambientRotation;
     prismGroup.rotation.x = Math.PI * 0.1 + Math.sin(time * 0.5) * 0.05;
     
-    // Animate each fragment
+    // First pass: calculate base positions
+    const basePositions = [];
     for (let i = 0; i < fragmentData.length; i++) {
         const data = fragmentData[i];
-        const mesh = data.mesh;
         
         // Apply delay to explosion (staggered effect)
         const delayedOpenness = Math.max(0, (handOpenness - data.delay) / (1 - data.delay));
         const t = easeOutCubic(Math.min(1, delayedOpenness));
         
-        // Position: lerp from original to exploded
+        // Base position from explosion direction
         const explodedPos = data.explosionDirection.clone().multiplyScalar(data.explosionDistance * t);
-        mesh.position.copy(data.originalPosition).add(explodedPos);
+        const basePos = data.originalPosition.clone().add(explodedPos);
+        basePositions.push({ pos: basePos, t: t });
+    }
+    
+    // Second pass: apply collision avoidance
+    const minDistance = 0.8; // Minimum distance between fragment centers
+    const repulsionStrength = 0.5;
+    
+    for (let i = 0; i < fragmentData.length; i++) {
+        const repulsion = new THREE.Vector3(0, 0, 0);
+        const posI = basePositions[i].pos;
+        const tI = basePositions[i].t;
+        
+        // Only apply collision when exploding (t > 0.1)
+        if (tI > 0.1) {
+            for (let j = 0; j < fragmentData.length; j++) {
+                if (i === j) continue;
+                
+                const posJ = basePositions[j].pos;
+                const diff = posI.clone().sub(posJ);
+                const dist = diff.length();
+                
+                if (dist < minDistance && dist > 0.001) {
+                    // Repel away from nearby fragment
+                    const force = diff.normalize().multiplyScalar(
+                        repulsionStrength * (minDistance - dist) / minDistance * tI
+                    );
+                    repulsion.add(force);
+                }
+            }
+        }
+        
+        // Apply final position with repulsion
+        const data = fragmentData[i];
+        const mesh = data.mesh;
+        const t = basePositions[i].t;
+        
+        mesh.position.copy(basePositions[i].pos).add(repulsion);
         
         // Rotation: spin as it explodes
         mesh.rotation.x = data.originalRotation.x + data.rotationSpeed.x * t;
