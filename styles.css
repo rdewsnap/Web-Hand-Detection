@@ -7,11 +7,11 @@
 
 :root {
     --cosmic-purple: #1a0a2e;
+    --cosmic-deep: #0d0518;
     --nebula-pink: #ff6b9d;
     --nebula-cyan: #4ecdc4;
     --nebula-blue: #7b68ee;
     --star-white: #f0f0ff;
-    --glow-intensity: 0.8;
 }
 
 html, body {
@@ -19,12 +19,199 @@ html, body {
     height: 100%;
     overflow: hidden;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--cosmic-purple);
+    background: var(--cosmic-deep);
     color: var(--star-white);
 }
 
-/* Canvas Container */
-#canvas-container {
+/* ============================================
+   MENU SCREEN
+   ============================================ */
+
+#menu-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, var(--cosmic-purple) 0%, var(--cosmic-deep) 100%);
+    z-index: -1;
+}
+
+.menu-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.4), transparent),
+        radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.3), transparent);
+    background-repeat: repeat;
+    background-size: 200px 150px;
+    animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.menu-content {
+    text-align: center;
+    padding: 40px;
+    max-width: 800px;
+}
+
+.menu-title {
+    font-size: 3.5rem;
+    font-weight: 200;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--nebula-cyan), var(--nebula-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 60px rgba(78, 205, 196, 0.3);
+}
+
+.menu-subtitle {
+    font-size: 1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(240, 240, 255, 0.5);
+    margin-bottom: 50px;
+}
+
+.demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.demo-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 20px;
+    padding: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.demo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent 0%, rgba(78, 205, 196, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.demo-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--nebula-cyan);
+    box-shadow: 0 20px 40px rgba(78, 205, 196, 0.2),
+                0 0 60px rgba(78, 205, 196, 0.1);
+}
+
+.demo-card:hover::before {
+    opacity: 1;
+}
+
+.demo-card-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    color: var(--nebula-cyan);
+    transition: all 0.3s ease;
+}
+
+.demo-card:hover .demo-card-icon {
+    color: var(--nebula-pink);
+    transform: scale(1.1);
+}
+
+.demo-card-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.prism-icon {
+    animation: rotate-slow 20s linear infinite;
+}
+
+.airplane-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes rotate-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-5px) rotate(5deg); }
+}
+
+.demo-card-title {
+    font-size: 1.4rem;
+    font-weight: 400;
+    margin-bottom: 10px;
+    color: var(--star-white);
+}
+
+.demo-card-desc {
+    font-size: 0.9rem;
+    color: rgba(240, 240, 255, 0.6);
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.demo-card-controls {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--nebula-cyan);
+    padding: 8px 16px;
+    background: rgba(78, 205, 196, 0.1);
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.menu-hint {
+    font-size: 0.85rem;
+    color: rgba(240, 240, 255, 0.4);
+    letter-spacing: 2px;
+}
+
+/* ============================================
+   DEMO CONTAINER
+   ============================================ */
+
+#demo-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -33,13 +220,60 @@ html, body {
     z-index: 1;
 }
 
+#canvas-container {
+    width: 100%;
+    height: 100%;
+}
+
 #canvas-container canvas {
     display: block;
     width: 100%;
     height: 100%;
 }
 
-/* Hidden video element */
+/* ============================================
+   BACK BUTTON
+   ============================================ */
+
+#back-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    border-radius: 30px;
+    color: var(--nebula-cyan);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+#back-button:hover {
+    background: rgba(78, 205, 196, 0.2);
+    border-color: var(--nebula-cyan);
+    transform: translateX(-3px);
+}
+
+#back-button svg {
+    transition: transform 0.3s ease;
+}
+
+#back-button:hover svg {
+    transform: translateX(-3px);
+}
+
+/* ============================================
+   WEBCAM & UI ELEMENTS
+   ============================================ */
+
 #webcam {
     position: absolute;
     opacity: 0;
@@ -48,7 +282,6 @@ html, body {
     height: 1px;
 }
 
-/* Webcam Preview */
 #webcam-preview {
     position: fixed;
     bottom: 20px;
@@ -84,120 +317,6 @@ html, body {
     letter-spacing: 1px;
     color: var(--nebula-cyan);
     text-align: center;
-}
-
-/* Loading Overlay */
-#loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0518 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-
-#loading-overlay.hidden {
-    opacity: 0;
-    visibility: hidden;
-}
-
-.loader {
-    text-align: center;
-}
-
-.loader-ring {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 20px;
-    border: 3px solid transparent;
-    border-top-color: var(--nebula-cyan);
-    border-right-color: var(--nebula-pink);
-    border-radius: 50%;
-    animation: spin 1.5s linear infinite;
-    box-shadow: 0 0 30px rgba(78, 205, 196, 0.3),
-                inset 0 0 30px rgba(255, 107, 157, 0.1);
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.loader p {
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: rgba(240, 240, 255, 0.7);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-}
-
-/* Permission Denied */
-#permission-denied {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0518 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1001;
-}
-
-#permission-denied.hidden {
-    display: none;
-}
-
-.message-box {
-    text-align: center;
-    padding: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 107, 157, 0.3);
-    max-width: 400px;
-    margin: 20px;
-}
-
-.message-box h2 {
-    font-size: 24px;
-    margin-bottom: 16px;
-    color: var(--nebula-pink);
-    font-weight: 300;
-}
-
-.message-box p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: rgba(240, 240, 255, 0.7);
-    margin-bottom: 24px;
-}
-
-.message-box button {
-    padding: 12px 32px;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    background: linear-gradient(135deg, var(--nebula-cyan), var(--nebula-blue));
-    border: none;
-    border-radius: 30px;
-    color: white;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.message-box button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(78, 205, 196, 0.5);
 }
 
 /* Openness Indicator */
@@ -257,7 +376,8 @@ html, body {
     transition: opacity 0.3s;
 }
 
-#instructions p {
+#instructions p,
+#instructions-text {
     font-size: 16px;
     font-weight: 300;
     letter-spacing: 3px;
@@ -266,20 +386,108 @@ html, body {
     text-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
 }
 
-#instructions p.sub {
+#instructions p.sub,
+#instructions-sub {
     font-size: 12px;
     margin-top: 8px;
     color: rgba(240, 240, 255, 0.5);
     letter-spacing: 2px;
 }
 
-/* Hidden helper class */
+/* ============================================
+   LOADING OVERLAY
+   ============================================ */
+
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, var(--cosmic-purple) 0%, var(--cosmic-deep) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#loading-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader {
+    text-align: center;
+}
+
+.loader-ring {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border: 3px solid transparent;
+    border-top-color: var(--nebula-cyan);
+    border-right-color: var(--nebula-pink);
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+    box-shadow: 0 0 30px rgba(78, 205, 196, 0.3),
+                inset 0 0 30px rgba(255, 107, 157, 0.1);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loader p {
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(240, 240, 255, 0.7);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
 .hidden {
     display: none !important;
 }
 
-/* Mobile Responsive */
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
 @media (max-width: 768px) {
+    .menu-title {
+        font-size: 2rem;
+        letter-spacing: 4px;
+    }
+
+    .menu-subtitle {
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+    }
+
+    .demo-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .demo-card {
+        padding: 20px;
+    }
+
+    .demo-card-icon {
+        width: 60px;
+        height: 60px;
+    }
+
     #webcam-preview {
         width: 120px;
         height: 90px;
@@ -297,20 +505,37 @@ html, body {
     }
 
     #instructions {
-        top: 20px;
+        top: 70px;
     }
 
-    #instructions p {
+    #instructions p,
+    #instructions-text {
         font-size: 12px;
         letter-spacing: 2px;
     }
 
-    #instructions p.sub {
+    #instructions p.sub,
+    #instructions-sub {
         font-size: 10px;
+    }
+
+    #back-button {
+        top: 15px;
+        left: 15px;
+        padding: 10px 16px;
+        font-size: 12px;
     }
 }
 
 @media (max-width: 480px) {
+    .menu-content {
+        padding: 20px;
+    }
+
+    .menu-title {
+        font-size: 1.5rem;
+    }
+
     #webcam-preview {
         width: 100px;
         height: 75px;
@@ -321,12 +546,3 @@ html, body {
         width: 6px;
     }
 }
-
-/* Touch device optimizations */
-@media (hover: none) and (pointer: coarse) {
-    #webcam-preview {
-        bottom: 15px;
-        left: 15px;
-    }
-}
-
